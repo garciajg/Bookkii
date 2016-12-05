@@ -8,6 +8,7 @@
 
 import UIKit
 import Firebase
+import FirebaseStorage
 
 class SignUpVC: UIViewController, UITextFieldDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     @IBOutlet var firstNameField: UITextField!
@@ -27,8 +28,11 @@ class SignUpVC: UIViewController, UITextFieldDelegate, UIImagePickerControllerDe
     @IBOutlet var continueButton: UIButton!
 
     let ref = FIRDatabase.database().reference()
+    var storageRef : FIRStorageReference!
+
     override func viewDidLoad() {
         super.viewDidLoad()
+        storageRef = FIRStorage.storage().reference()
         design()
 
 
@@ -130,7 +134,7 @@ class SignUpVC: UIViewController, UITextFieldDelegate, UIImagePickerControllerDe
                             self.ref.child("users").child(self.usernameField.text!).child("lastName").setValue(lastName)
                             self.ref.child("users").child(self.usernameField.text!).child("birthday").setValue(self.birthdayField.text!)
                             self.ref.child("users").child(self.usernameField.text!).child("email").setValue(email)
-                                
+                            self.saveProfilePhotoToDatabase(image: self.uploadedImage)
                             }
                         })
                     }
@@ -148,6 +152,29 @@ class SignUpVC: UIViewController, UITextFieldDelegate, UIImagePickerControllerDe
         self.present(alert, animated: true, completion: nil)
     }
 
+    //MARK: imageAsData() takes and image to turn it into data returning NSData Object.
+
+    func saveProfilePhotoToDatabase(image: UIImageView) {
+        var data = NSData()
+        data = UIImageJPEGRepresentation(image.image!, 0.8)! as NSData
+        let filePath = FIRAuth.auth()!.currentUser!.uid + "/\(Int(Date.timeIntervalSinceReferenceDate * 1000)).jpg"
+        let metaData = FIRStorageMetadata()
+        metaData.contentType = "image/jpeg"
+        self.storageRef.child(filePath).put(data as Data, metadata: metaData) { (metaData, error) in
+            if error != nil{
+                print(error?.localizedDescription)
+            } else {
+                self.uploadSuccess(metaData!, storagePath: filePath)
+            }
+        }
+    }
+
+    func uploadSuccess(_ metadata: FIRStorageMetadata, storagePath: String) {
+        print("Upload Succeeded!")
+        UserDefaults.standard.set(storagePath, forKey: "storagePath")
+        UserDefaults.standard.synchronize()
+    }
+
     //MARK: disgn() method just sets delegates to texfields and design of buttons
     func design() {
         emailField.delegate = self
@@ -162,6 +189,8 @@ class SignUpVC: UIViewController, UITextFieldDelegate, UIImagePickerControllerDe
         cancelButton.layer.cornerRadius = 25
         continueButton.layer.cornerRadius = 25
     }
+
+    //MARK: IBActions from buttons
 
     @IBAction func didPressCameraButton(_ sender: AnyObject) {
         if (UIImagePickerController.isSourceTypeAvailable(.camera)) {
@@ -193,6 +222,8 @@ class SignUpVC: UIViewController, UITextFieldDelegate, UIImagePickerControllerDe
     @IBAction func didPressClearButton(_ sender: AnyObject) {
         uploadedImage.image = nil
     }
+
+
     /*
     // MARK: - Navigation
 

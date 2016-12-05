@@ -8,6 +8,7 @@ target 'Bookki' do
   pod ‘Firebase/Database’
   pod ‘Firebase/Auth’
   pod ‘Firebase’
+  pod ‘FirebaseStorage’
 
   # Pods for Bookki
 
