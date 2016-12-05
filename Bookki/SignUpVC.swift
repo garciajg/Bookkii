@@ -9,7 +9,7 @@
 import UIKit
 import Firebase
 
-class SignUpVC: UIViewController, UITextFieldDelegate {
+class SignUpVC: UIViewController, UITextFieldDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     @IBOutlet var firstNameField: UITextField!
     @IBOutlet var lastNameField: UITextField!
     @IBOutlet var emailField: UITextField!
@@ -18,12 +18,15 @@ class SignUpVC: UIViewController, UITextFieldDelegate {
     @IBOutlet var passwordField: UITextField!
     @IBOutlet var reenterPasswordField: UITextField!
     @IBOutlet var birthdayField: UITextField!
+    @IBOutlet var uploadedImage: UIImageView!
+    @IBOutlet var cameraButton: UIButton!
+    @IBOutlet var clearButton: UIButton!
+    @IBOutlet var galeryButton: UIButton!
 
     @IBOutlet weak var cancelButton: UIButton!
     @IBOutlet var continueButton: UIButton!
 
     let ref = FIRDatabase.database().reference()
-
     override func viewDidLoad() {
         super.viewDidLoad()
         design()
@@ -38,7 +41,7 @@ class SignUpVC: UIViewController, UITextFieldDelegate {
     }
     
     @IBAction func didPressCancel(_ sender: AnyObject) {
-        self.dismiss(animated: true, completion: nil)
+        dismiss(animated: true, completion: nil)
         
     }
     @IBAction func didPressContinue(_ sender: AnyObject) {
@@ -63,14 +66,32 @@ class SignUpVC: UIViewController, UITextFieldDelegate {
     func textFieldDidBeginEditing(_ textField: UITextField) {
     }
 
+    //MARK: UIImagePicker Delegate Methods
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        dismiss(animated: true, completion: nil)
+    }
+
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
+        let choosenImage = info[UIImagePickerControllerEditedImage] as! UIImage
+        uploadedImage.contentMode = .scaleAspectFit
+        uploadedImage.image = choosenImage
+
+        self.dismiss(animated: true) { 
+            print("Image picked")
+        }
+    }
+
+
+    //MARK: signupUser() signs up the user and the attributes are saved in database
     func signUpUser() {
         //TODO: Check for the username
         //TODO: Check how to add date from string
         let email = self.emailField.text!.trimmingCharacters(in: .whitespaces).lowercased()
         var password = self.passwordField.text!
         let username = self.usernameField.text!.trimmingCharacters(in: .whitespaces)
-        let firstName = self.usernameField.text!.trimmingCharacters(in: .whitespaces)
-        let lastName = self.lastNameField.text!.trimmingCharacters(in: .whitespaces)
+        let firstName = self.firstNameField.text!.trimmingCharacters(in: .whitespaces).capitalized
+        let lastName = self.lastNameField.text!.trimmingCharacters(in: .whitespaces).capitalized
 
 
         if (email != reenterEmailField.text || password != reenterPasswordField.text) {
@@ -142,7 +163,36 @@ class SignUpVC: UIViewController, UITextFieldDelegate {
         continueButton.layer.cornerRadius = 25
     }
 
+    @IBAction func didPressCameraButton(_ sender: AnyObject) {
+        if (UIImagePickerController.isSourceTypeAvailable(.camera)) {
+            let imagePicker = UIImagePickerController()
+            imagePicker.delegate = self
+            imagePicker.allowsEditing = true
+            imagePicker.sourceType = .camera
 
+            present(imagePicker, animated: true, completion: nil)
+        } else {
+            showAlert(title: "Oops!", text: "Sorry, seems like your camera is not available")
+        }
+
+    }
+
+    @IBAction func didPressGaleryButton(_ sender: AnyObject) {
+        if UIImagePickerController.isSourceTypeAvailable(.photoLibrary) {
+                let imagePicker = UIImagePickerController()
+                imagePicker.delegate = self
+                imagePicker.allowsEditing = true
+                imagePicker.sourceType = .photoLibrary
+
+                present(imagePicker, animated: true, completion:nil)
+        } else {
+            showAlert(title: "Oops", text: "Seems like your galery is not available")
+        }
+    }
+
+    @IBAction func didPressClearButton(_ sender: AnyObject) {
+        uploadedImage.image = nil
+    }
     /*
     // MARK: - Navigation
 
